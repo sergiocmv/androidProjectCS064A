@@ -1,11 +1,14 @@
 package com.example.projectstartdemo;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Set;
-
+import java.util.UUID;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -22,11 +25,14 @@ import android.widget.Toast;
 
 public class MainActivity extends Activity {
    
-   Button btnListPairedDevices;
-   Button btnStartScan;
-   Button btnStopScan;
+   Button btnListPairedDevices, btnStartScan, btnStopScan;
+   Button openButton, sendButton, closeButton;
    ListView listView;
    BroadcastReceiver mReceiver;
+   BluetoothSocket mSocket;
+   BluetoothDevice mDevice;
+   OutputStream mOutputStream;
+   InputStream mInputStream;
    
    private BluetoothAdapter myBluetoothAdapter;
    private Set<BluetoothDevice> pairedDevices;
@@ -45,7 +51,9 @@ public class MainActivity extends Activity {
          Toast.makeText(getApplicationContext(),"Your device does not support Bluetooth",
                Toast.LENGTH_LONG).show();
       } 
-      
+      openButton = (Button)findViewById(R.id.open);
+      closeButton = (Button)findViewById(R.id.close);
+      sendButton = (Button)findViewById(R.id.send);
       btnListPairedDevices = (Button)findViewById(R.id.btnPairedDevices);
       listView             = (ListView)findViewById(R.id.listView);
       
@@ -81,6 +89,101 @@ public class MainActivity extends Activity {
 
       IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND); 
       registerReceiver(mReceiver, filter);
+    //Open Button
+      openButton.setOnClickListener(new View.OnClickListener()
+      {
+          public void onClick(View v)
+          {
+              try 
+              {
+                  findBT();
+                  openBT();
+              }
+              catch (IOException ex) { }
+          }
+      });
+      
+      //Send Button
+      sendButton.setOnClickListener(new View.OnClickListener()
+      {
+          public void onClick(View v)
+          {
+              try 
+              {
+                  sendData();
+              }
+              catch (IOException ex) { }
+          }
+      });
+      
+      //Close button
+      closeButton.setOnClickListener(new View.OnClickListener()
+      {
+          public void onClick(View v)
+          {
+              try 
+              {
+                  closeBT();
+              }
+              catch (IOException ex) { }
+          }
+      });
+   }
+   
+   void findBT()
+   {
+       myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
+       if(myBluetoothAdapter == null)
+       {
+           Toast.makeText(MainActivity.this, "No bluetooth adapter available", Toast.LENGTH_SHORT).show();
+       }
+       
+       if(!myBluetoothAdapter.isEnabled())
+       {
+           Intent enableBluetooth = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+           startActivityForResult(enableBluetooth, 0);
+       }
+       
+       Set<BluetoothDevice> pairedDevices = myBluetoothAdapter.getBondedDevices();
+       if(pairedDevices.size() > 0)
+       {
+           for(BluetoothDevice device : pairedDevices)
+           {
+               if(device.getName().equals("HC-06")) 
+               {
+                   mDevice = device;
+                   break;
+               }
+           }
+       }
+       Toast.makeText(MainActivity.this, "Bluetooth Device Found", Toast.LENGTH_SHORT).show();
+   }
+   
+   void openBT() throws IOException
+   {
+       UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"); //Standard SerialPortService ID
+       mSocket = mDevice.createRfcommSocketToServiceRecord(uuid);        
+       mSocket.connect();
+       mOutputStream = mSocket.getOutputStream();
+       mInputStream = mSocket.getInputStream();
+       
+       Toast.makeText(MainActivity.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
+   }
+   
+   void sendData() throws IOException
+   {
+       String msg = "Hello Arduino!";
+       msg += "\n";
+       mOutputStream.write(msg.getBytes());
+       Toast.makeText(MainActivity.this, "Data Sent", Toast.LENGTH_SHORT).show();
+   }
+   
+   void closeBT() throws IOException
+   {
+       mOutputStream.close();
+       mInputStream.close();
+       mSocket.close();
+       Toast.makeText(MainActivity.this, "Bluetooth Closed", Toast.LENGTH_SHORT).show();
    }
    
    public void onListPairedDevicesClicked(View view) {
