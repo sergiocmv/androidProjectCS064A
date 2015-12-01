@@ -23,16 +23,18 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
-public class MainActivity extends Activity {
+public class BluetoothScreen extends Activity {
    
    Button btnListPairedDevices, btnStartScan, btnStopScan;
-   Button openButton, sendButton, closeButton;
+   Button openButton, backButton, closeButton;
    ListView listView;
    BroadcastReceiver mReceiver;
-   BluetoothSocket mSocket;
-   BluetoothDevice mDevice;
-   OutputStream mOutputStream;
-   InputStream mInputStream;
+   //BluetoothSocket mSocket;
+   //BluetoothDevice mDevice;
+   //OutputStream mOutputStream;
+   //InputStream mInputStream;
+   String deviceName, deviceAddress;
+   GlobalClass globalVariable;
    
    private BluetoothAdapter myBluetoothAdapter;
    private Set<BluetoothDevice> pairedDevices;
@@ -41,7 +43,9 @@ public class MainActivity extends Activity {
    @Override
    protected void onCreate(Bundle savedInstanceState) {
       super.onCreate(savedInstanceState);
-      setContentView(R.layout.activity_main);
+      setContentView(R.layout.bluetoothscreen);
+      
+      globalVariable = (GlobalClass) getApplicationContext();
       
       // take an instance of BluetoothAdapter - Bluetooth radio
       myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -53,39 +57,46 @@ public class MainActivity extends Activity {
       } 
       openButton = (Button)findViewById(R.id.open);
       closeButton = (Button)findViewById(R.id.close);
-      sendButton = (Button)findViewById(R.id.send);
+      backButton = (Button)findViewById(R.id.back);
       btnListPairedDevices = (Button)findViewById(R.id.btnPairedDevices);
       listView             = (ListView)findViewById(R.id.listView);
       
       // Create the arrayAdapter that contains the BTDevices, and set it to the ListView.
       // It is populated when "List Paired Devices" button clicked.
-      BTArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_1);
+      BTArrayAdapter = new ArrayAdapter<String>(this, android.R.layout.simple_list_item_activated_1);
       listView.setAdapter(BTArrayAdapter);
+      listView.setTextFilterEnabled(true);
+      listView.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
       listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
          
          @Override
          public void onItemClick(AdapterView<?> parent, View view,	int position, long id) {
             // TODO Auto-generated method stub
             String item = listView.getItemAtPosition(position).toString();
-            Toast.makeText(MainActivity.this, "Your clicked " + item, Toast.LENGTH_SHORT).show();
+            String delims = "\n";
+            String[] tokens = item.split(delims);
+            deviceName = tokens[0];
+            deviceAddress = tokens[1];
+            listView.setItemChecked(position, true);
+            Toast.makeText(BluetoothScreen.this, "You selected = " + deviceName, Toast.LENGTH_SHORT).show();
          }
       });
       //BluetoothAdapter mBluetoothAdapter;
       myBluetoothAdapter.startDiscovery(); 
       mReceiver = new BroadcastReceiver() {
-      public void onReceive(Context context, Intent intent) {
-          String action = intent.getAction();
-
-          //Finding devices                 
-          if (BluetoothDevice.ACTION_FOUND.equals(action)) 
-          {
-              // Get the BluetoothDevice object from the Intent
-              BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-              // Add the name and address to an array adapter to show in a ListView
-             BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-          }
-        }
-      };
+         public void onReceive(Context context, Intent intent) {
+             String action = intent.getAction();
+   
+             //Finding devices                 
+             if (BluetoothDevice.ACTION_FOUND.equals(action)) 
+             {
+                 // Get the BluetoothDevice object from the Intent
+                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+                 // Add the name and address to an array adapter to show in a ListView
+                BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+             }
+           }
+         };
 
       IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND); 
       registerReceiver(mReceiver, filter);
@@ -96,6 +107,9 @@ public class MainActivity extends Activity {
           {
               try 
               {
+                  if (deviceAddress == null)
+                     return;
+                  
                   findBT();
                   openBT();
               }
@@ -103,16 +117,12 @@ public class MainActivity extends Activity {
           }
       });
       
-      //Send Button
-      sendButton.setOnClickListener(new View.OnClickListener()
+      backButton.setOnClickListener(new View.OnClickListener()
       {
           public void onClick(View v)
           {
-              try 
-              {
-                  sendData();
-              }
-              catch (IOException ex) { }
+              
+              finish();
           }
       });
       
@@ -123,6 +133,8 @@ public class MainActivity extends Activity {
           {
               try 
               {
+                 if (globalVariable.getBluetoothDevice() == null)
+                    return;
                   closeBT();
               }
               catch (IOException ex) { }
@@ -130,12 +142,16 @@ public class MainActivity extends Activity {
       });
    }
    
+   protected void onListItemClicked(ListView l, View v, int position, long id) {
+      listView.setItemChecked(position, true);
+   }
+   
    void findBT()
    {
        myBluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
        if(myBluetoothAdapter == null)
        {
-           Toast.makeText(MainActivity.this, "No bluetooth adapter available", Toast.LENGTH_SHORT).show();
+           Toast.makeText(BluetoothScreen.this, "No bluetooth adapter available", Toast.LENGTH_SHORT).show();
        }
        
        if(!myBluetoothAdapter.isEnabled())
@@ -149,41 +165,41 @@ public class MainActivity extends Activity {
        {
            for(BluetoothDevice device : pairedDevices)
            {
-               if(device.getName().equals("HC-06")) 
+               if(device.getAddress().equals(deviceAddress)) 
                {
-                   mDevice = device;
+                   globalVariable.setBluetoothDevice(device);
                    break;
                }
            }
        }
-       Toast.makeText(MainActivity.this, "Bluetooth Device Found", Toast.LENGTH_SHORT).show();
+       Toast.makeText(BluetoothScreen.this, "Bluetooth Device Found", Toast.LENGTH_SHORT).show();
    }
    
    void openBT() throws IOException
    {
        UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"); //Standard SerialPortService ID
-       mSocket = mDevice.createRfcommSocketToServiceRecord(uuid);        
-       mSocket.connect();
-       mOutputStream = mSocket.getOutputStream();
-       mInputStream = mSocket.getInputStream();
-       
-       Toast.makeText(MainActivity.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
+       globalVariable.setBluetoothSocket(globalVariable.getBluetoothDevice().createRfcommSocketToServiceRecord(uuid));
+       globalVariable.getBluetoothSocket().connect();
+       globalVariable.setOutputStream(globalVariable.getBluetoothSocket().getOutputStream());
+       globalVariable.setInputStream(globalVariable.getBluetoothSocket().getInputStream());
+      
+       Toast.makeText(BluetoothScreen.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
    }
    
-   void sendData() throws IOException
-   {
-       String msg = "Hello Arduino!";
-       msg += "\n";
-       mOutputStream.write(msg.getBytes());
-       Toast.makeText(MainActivity.this, "Data Sent", Toast.LENGTH_SHORT).show();
-   }
-   
+//   void sendData() throws IOException
+//   {
+//       String msg = "Hello Arduino!";
+//       msg += "\n";
+//       globalVariable.getOutputStream().write(msg.getBytes());
+//       Toast.makeText(BluetoothScreen.this, "Data Sent", Toast.LENGTH_SHORT).show();
+//   }
+//   
    void closeBT() throws IOException
    {
-       mOutputStream.close();
-       mInputStream.close();
-       mSocket.close();
-       Toast.makeText(MainActivity.this, "Bluetooth Closed", Toast.LENGTH_SHORT).show();
+       globalVariable.getOutputStream().close();
+       globalVariable.getInputStream().close();
+       globalVariable.getBluetoothSocket().close();
+       Toast.makeText(BluetoothScreen.this, "Bluetooth Closed", Toast.LENGTH_SHORT).show();
    }
    
    public void onListPairedDevicesClicked(View view) {
