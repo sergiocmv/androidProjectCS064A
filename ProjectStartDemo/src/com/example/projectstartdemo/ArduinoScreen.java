@@ -42,7 +42,13 @@ public class ArduinoScreen extends Activity
       mAdd.setOnClickListener(new OnClickListener(){
          
          public void onClick(View view){
-            mCommandList.add(new String(mNewCommand.getText().toString()));
+        	String msgText = new String(mNewCommand.getText().toString());
+        	if(msgText.isEmpty())
+        	{
+        		Toast.makeText(ArduinoScreen.this, "Please enter text to send to Arduino, then press Add button", Toast.LENGTH_SHORT).show();
+        	} else {
+                mCommandList.add(msgText);
+        	}
             mNewCommand.setText("");
          }
       });
