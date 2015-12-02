@@ -13,11 +13,13 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.Toast;
 
 public class ArduinoScreen extends Activity
 {
+   ImageView greenCheck, redX;
    ListView mCommands;
    EditText mNewCommand;
    Button mAdd, mConnect;
@@ -26,7 +28,11 @@ public class ArduinoScreen extends Activity
    
    @Override
    protected void onCreate(Bundle savedInstanceState) {
+      
       super.onCreate(savedInstanceState);
+      greenCheck = (ImageView)findViewById(R.id.greenCheck);
+      redX = (ImageView)findViewById(R.id.redX);
+      
       setContentView(R.layout.arduinoscreen);
       globalVariable = (GlobalClass) getApplicationContext();
       
@@ -41,9 +47,18 @@ public class ArduinoScreen extends Activity
       
       mAdd.setOnClickListener(new OnClickListener(){
          
-         public void onClick(View view){
-            mCommandList.add(new String(mNewCommand.getText().toString()));
-            mNewCommand.setText("");
+         public void onClick(View view)
+         {
+            String msgText = new String(mNewCommand.getText().toString());
+            if(msgText.isEmpty())
+            {
+               Toast.makeText(ArduinoScreen.this, "Please enter text to send to Arduino, then press Add button", Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+               mCommandList.add(msgText);
+            }
+            mNewCommand.setText(msgText);
          }
       });
       
@@ -70,15 +85,37 @@ public class ArduinoScreen extends Activity
    
    void sendData(String command) throws IOException
    {
-       
-       command += "\n";
-       globalVariable.getOutputStream().write(command.getBytes());
-       Toast.makeText(ArduinoScreen.this, "Data Sent", Toast.LENGTH_SHORT).show();
+      
+      command += "\n";
+      globalVariable.getOutputStream().write(command.getBytes());
+      Toast.makeText(ArduinoScreen.this, "Data Sent", Toast.LENGTH_SHORT).show();
    }
    
    public void openConnect(View view)
    {
       Intent intent = new Intent(ArduinoScreen.this, BluetoothScreen.class);
       startActivity(intent);
+   }
+   
+   //method tocheck if connected or not
+   @Override
+   protected void onActivityResult(int requestcode, int resultCode, Intent data)
+   {
+      Bundle extra = getIntent().getExtras();
+      if(extra.getBoolean("connected"))//get the connectedFlag boolean
+      {//if true
+         greenCheck.setVisibility(View.VISIBLE);//set greencheck to visible
+         redX.setVisibility(View.INVISIBLE);//red x to invisible
+         
+         //String resultStr = data.getStringExtra("result");//get the string
+         //tvDisplay.setText(resultStr + "! thank you for playing the game.");//set the string!
+      }
+      else 
+      {
+         greenCheck.setVisibility(View.INVISIBLE);//set green to invisible
+         redX.setVisibility(View.VISIBLE);//set redX to visible
+      }
+         //tvDisplay.setText("");
+      
    }
 }

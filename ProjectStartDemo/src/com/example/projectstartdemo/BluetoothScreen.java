@@ -28,6 +28,7 @@ public class BluetoothScreen extends Activity {
    Button btnListPairedDevices, btnStartScan, btnStopScan;
    Button openButton, backButton, closeButton;
    ListView listView;
+   boolean flagConnected = false;//set default value of flag to false
    BroadcastReceiver mReceiver;
    //BluetoothSocket mSocket;
    //BluetoothDevice mDevice;
@@ -86,25 +87,7 @@ public class BluetoothScreen extends Activity {
             Toast.makeText(BluetoothScreen.this, "You selected = " + deviceName, Toast.LENGTH_SHORT).show();
          }
       });
-      //BluetoothAdapter mBluetoothAdapter;
- /*     myBluetoothAdapter.startDiscovery(); 
-      mReceiver = new BroadcastReceiver() {
-         public void onReceive(Context context, Intent intent) {
-             String action = intent.getAction();
-   
-             //Finding devices                 
-             if (BluetoothDevice.ACTION_FOUND.equals(action)) 
-             {
-                 // Get the BluetoothDevice object from the Intent
-                 BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
-                 // Add the name and address to an array adapter to show in a ListView
-                BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
-             }
-           }
-         };
 
-      IntentFilter filter = new IntentFilter(BluetoothDevice.ACTION_FOUND); 
-      registerReceiver(mReceiver, filter);*/
     //Open Button
       openButton.setOnClickListener(new View.OnClickListener()
       {
@@ -189,6 +172,10 @@ public class BluetoothScreen extends Activity {
        globalVariable.setInputStream(globalVariable.getBluetoothSocket().getInputStream());
       
        Toast.makeText(BluetoothScreen.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
+       flagConnected = true;//set flag to true that it is conenected
+       Intent returnIntent = getIntent();
+       returnIntent.putExtra("connected", flagConnected);//put extra to return back to arduino
+       //setResult(Activity.RESULT_OK, returnIntent);//set the result on the extra?
    }
    
 //   void sendData() throws IOException
@@ -208,6 +195,7 @@ public class BluetoothScreen extends Activity {
    }
    
    public void onListPairedDevicesClicked(View view) {
+      BTArrayAdapter.clear();//clear list
       // get paired devices
       pairedDevices = myBluetoothAdapter.getBondedDevices();
       
@@ -256,6 +244,9 @@ public class BluetoothScreen extends Activity {
    public boolean onCreateOptionsMenu(Menu menu) {
       // Inflate the menu; this adds items to the action bar if it is present.
       getMenuInflater().inflate(R.menu.main, menu);
+      //pass the verification that connected to bluetooth back to arduino screen
+      Bundle extra = getIntent().getExtras();
+      
       return true;
    }
    
