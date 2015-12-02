@@ -78,7 +78,7 @@ public class BluetoothScreen extends Activity {
             deviceName = tokens[0];
             deviceAddress = tokens[1];
             listView.setItemChecked(position, true);
-            Toast.makeText(BluetoothScreen.this, "You selected = " + deviceName, Toast.LENGTH_SHORT).show();
+            Toast.makeText(BluetoothScreen.this, "You selected = " + deviceAddress, Toast.LENGTH_SHORT).show();
          }
       });
       //BluetoothAdapter mBluetoothAdapter;
