@@ -168,25 +168,28 @@ public class BluetoothScreen extends Activity {
                if(device.getAddress().equals(deviceAddress)) 
                {
                    globalVariable.setBluetoothDevice(device);
+                   Toast.makeText(BluetoothScreen.this, "Bluetooth Device Found", Toast.LENGTH_SHORT).show();
                    break;
                }
            }
        }
-       Toast.makeText(BluetoothScreen.this, "Bluetooth Device Found", Toast.LENGTH_SHORT).show();
    }
    
    void openBT() throws IOException
    {
        UUID uuid = UUID.fromString("00001101-0000-1000-8000-00805f9b34fb"); //Standard SerialPortService ID
+       if (globalVariable.getBluetoothDevice()== null) {
+    	   Toast.makeText(BluetoothScreen.this, "ERROR - Bluetooth Device Not Found!", Toast.LENGTH_SHORT).show();
+    	   return;
+       }
+       
        Toast.makeText(BluetoothScreen.this, globalVariable.getBluetoothDevice().toString(), Toast.LENGTH_SHORT).show();
-       if (globalVariable.getBluetoothDevice()== null)
-          return;
        globalVariable.setBluetoothSocket(globalVariable.getBluetoothDevice().createRfcommSocketToServiceRecord(uuid));
        globalVariable.getBluetoothSocket().connect();
        globalVariable.setOutputStream(globalVariable.getBluetoothSocket().getOutputStream());
        globalVariable.setInputStream(globalVariable.getBluetoothSocket().getInputStream());
       
-//       Toast.makeText(BluetoothScreen.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
+       Toast.makeText(BluetoothScreen.this, "Bluetooth Opened", Toast.LENGTH_SHORT).show();
    }
    
 //   void sendData() throws IOException
