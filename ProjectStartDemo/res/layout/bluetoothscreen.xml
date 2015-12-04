@@ -46,7 +46,8 @@
             android:gravity="center_vertical|center_horizontal"
             android:text="Start Scan"
             android:textColor="#ffffff"
-            android:typeface="monospace" />
+            android:typeface="monospace" 
+            android:onClick="onStartScanClicked" />
 
         <Button
             android:id="@+id/btnStopScan"
@@ -59,7 +60,8 @@
             android:gravity="center_vertical|center_horizontal"
             android:text="Stop Scan"
             android:textColor="#ffffff"
-            android:typeface="monospace" />
+            android:typeface="monospace"
+            android:onClick="onStopScanClicked" />
 
     </LinearLayout>
 

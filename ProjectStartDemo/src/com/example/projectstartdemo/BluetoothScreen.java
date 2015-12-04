@@ -238,5 +238,40 @@ public class BluetoothScreen extends Activity {
       }
       return super.onOptionsItemSelected(item);
    }
+   
+   final BroadcastReceiver bReceiver = new BroadcastReceiver() {
+      public void onReceive(Context context, Intent intent) {
+          String action = intent.getAction();
+          // When discovery finds a device
+          if (BluetoothDevice.ACTION_FOUND.equals(action)) {
+               // Get the BluetoothDevice object from the Intent
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            // add the name and the MAC address of the object to the arrayAdapter
+               BTArrayAdapter.add(device.getName() + "\n" + device.getAddress());
+               BTArrayAdapter.notifyDataSetChanged();
+          }
+          else // hopefully this will clear list view?
+          {
+             //BTArrayAdapter.clear();//clear contents
+           BTArrayAdapter.notifyDataSetChanged();//update list view
+          }
+      }
+  };
+   public void onStartScanClicked(View view)
+   {
+      BTArrayAdapter.clear();//clear list
+      myBluetoothAdapter.startDiscovery();//start discovering devices
+      Toast.makeText(getApplicationContext(),"Start Scan.",
+            Toast.LENGTH_SHORT).show();
+      registerReceiver(bReceiver, new IntentFilter(BluetoothDevice.ACTION_FOUND));
+   }
+   
+   public void onStopScanClicked(View view)
+   {
+      BTArrayAdapter.clear();//clear list
+      myBluetoothAdapter.cancelDiscovery();//stop discovery
+      Toast.makeText(getApplicationContext(),"Stop Scan.",
+            Toast.LENGTH_SHORT).show();
+   }
 
 }
